@@ -83,7 +83,7 @@ Thank you! We'll try to respond as quickly as possible.
    or lower. If you have 5.6 or lower installed locally and cannot upgrade for
    some reason, you may want to consider setting up Docker as mentioned below.
 
-   See [.env.sample](.env.sample) for an example that works with a trivial
+   See [.env.sample](.env) for an example that works with a trivial
    local setup.
 
    *Note:* If you didn't specify the MySQL user to be one with elevated
