@@ -74,6 +74,20 @@ where
     }
 }
 
+impl<T, ST, DB> Queryable<ST, DB> for Option<T>
+    where
+        T: Queryable<ST, DB>,
+        DB: Backend,
+        Option<T::Row>: FromSqlRow<ST, DB>,
+        ST: NotNull,
+{
+    type Row = Option<T::Row>;
+
+    fn build(row: Self::Row) -> Self {
+        row.map(T::build)
+    }
+}
+
 impl<T, DB> QueryableByName<DB> for Option<T>
 where
     T: QueryableByName<DB>,
@@ -100,7 +114,26 @@ where
     const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
 
     fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
-        let fields_needed = Self::FIELDS_NEEDED;
+        let fields_needed = T::FIELDS_NEEDED;
+        if row.next_is_null(fields_needed) {
+            row.advance(fields_needed);
+            Ok(None)
+        } else {
+            T::build_from_row(row).map(Some)
+        }
+    }
+}
+
+impl<T, ST, DB> FromSqlRow<ST, DB> for Option<T>
+    where
+        T: FromSqlRow<ST, DB>,
+        DB: Backend,
+        ST: NotNull,
+{
+    const FIELDS_NEEDED: usize = T::FIELDS_NEEDED;
+
+    fn build_from_row<R: ::row::Row<DB>>(row: &mut R) -> deserialize::Result<Self> {
+        let fields_needed = T::FIELDS_NEEDED;
         if row.next_is_null(fields_needed) {
             row.advance(fields_needed);
             Ok(None)
