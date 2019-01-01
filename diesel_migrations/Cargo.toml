@@ -13,7 +13,7 @@ migrations_internals = { path = "migrations_internals" }
 migrations_macros = { path = "migrations_macros" }
 
 [dev-dependencies]
-diesel = { path = "../diesel", default-features = false, features = ["sqlite", "postgres", "mysql"] }
+diesel = { path = "../diesel", default-features = false }
 dotenv = ">=0.8, <0.11"
 cfg-if = "0.1.0"
 
