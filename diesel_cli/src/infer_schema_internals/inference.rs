@@ -122,6 +122,15 @@ macro_rules! doc_comment {
     };
 }
 
+fn camelcase(name: &str) -> String {
+    let mut rv: String = String::new();
+    for s in name.split("_") {
+        rv += &s[..1].to_uppercase();
+        rv += &s[1..];
+    }
+    rv
+}
+
 pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData, Box<Error>> {
     let connection = InferConnection::establish(database_url)?;
     let docs = doc_comment!(
@@ -144,7 +153,11 @@ pub fn load_table_data(database_url: &str, name: TableName) -> Result<TableData,
     let column_data = get_column_information(&connection, &name)?
         .into_iter()
         .map(|c| {
-            let ty = determine_column_type(&c, &connection)?;
+            let mut ty = determine_column_type(&c, &connection)?;
+            if ty.rust_name == "Enum" {
+                ty.rust_name = camelcase(&name.name[..]) + &camelcase(&c.column_name[..])[..] + "EnumMapping";
+            }
+
             let rust_name = if RESERVED_NAMES.contains(&c.column_name.as_str()) {
                 Some(format!("{}_", c.column_name))
             } else {

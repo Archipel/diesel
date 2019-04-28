@@ -177,11 +177,44 @@ impl<'a> Display for TableDefinition<'a> {
             let mut out = PadAdapter::new(f);
             writeln!(out)?;
 
-            if let Some(types) = self.import_types {
-                for import in types {
-                    writeln!(out, "use {};", import)?;
+            let mut import_geom = false;
+            let mut import_enum = false;
+            for c in &self.table.column_data {
+                if c.ty.rust_name.ends_with("EnumMapping") {
+                    import_enum = true;
+                }
+                else {
+                    match &c.ty.rust_name[..] {
+                        "Gemoetry" | "Point" | "Linestring" | "Polygon" |
+                        "Multipoint" | "Multilinestring" | "Multipolygon" | "Geometrycollection" => {
+                            import_geom = true;
+                        },
+                        _ => {}
+                    };
+                }
+                if import_geom && import_enum {
+                    break;
+                }
+            }
+
+            if import_geom || import_enum {
+                writeln!(out, "use diesel::sql_types::*;")?;
+                if import_geom {
+                    writeln!(out, "use diesel_geometry::sql_types::*;")?;
+                }
+                if import_enum {
+                    writeln!(out, "use super::*;")?;
                 }
                 writeln!(out)?;
+            }
+
+            if let Some(types) = self.import_types {
+                if types.len() > 0 {
+                    for import in types {
+                        writeln!(out, "use {};", import)?;
+                    }
+                    writeln!(out)?;
+                }
             }
 
             if self.include_docs {
