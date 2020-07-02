@@ -45,27 +45,18 @@ mod foreign_impls {
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(
-        feature = "mysql",
-        sql_type = "::sql_types::Unsigned<SmallInt>"
-    )]
+    #[cfg_attr(feature = "mysql", sql_type = "::sql_types::Unsigned<SmallInt>")]
     struct U16Proxy(u16);
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(
-        feature = "mysql",
-        sql_type = "::sql_types::Unsigned<Integer>"
-    )]
+    #[cfg_attr(feature = "mysql", sql_type = "::sql_types::Unsigned<Integer>")]
     #[cfg_attr(feature = "postgres", sql_type = "::sql_types::Oid")]
     struct U32Proxy(u32);
 
     #[derive(FromSqlRow, AsExpression)]
     #[diesel(foreign_derive)]
-    #[cfg_attr(
-        feature = "mysql",
-        sql_type = "::sql_types::Unsigned<BigInt>"
-    )]
+    #[cfg_attr(feature = "mysql", sql_type = "::sql_types::Unsigned<BigInt>")]
     struct U64Proxy(u64);
 
     #[derive(FromSqlRow, AsExpression)]
@@ -141,7 +132,7 @@ impl<DB: Backend> ToSql<sql_types::Text, DB> for str {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self.as_bytes())
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 
@@ -193,7 +184,7 @@ impl<DB: Backend> ToSql<sql_types::Binary, DB> for [u8] {
     fn to_sql<W: Write>(&self, out: &mut Output<W, DB>) -> serialize::Result {
         out.write_all(self)
             .map(|_| IsNull::No)
-            .map_err(|e| Box::new(e) as Box<Error + Send + Sync>)
+            .map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
     }
 }
 

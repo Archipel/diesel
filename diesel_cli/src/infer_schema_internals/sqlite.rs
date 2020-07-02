@@ -40,7 +40,7 @@ table! {
 pub fn load_table_names(
     connection: &SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<TableName>, Box<Error>> {
+) -> Result<Vec<TableName>, Box<dyn Error>> {
     use self::sqlite_master::dsl::*;
 
     if schema_name.is_some() {
@@ -64,7 +64,7 @@ pub fn load_table_names(
 pub fn load_foreign_key_constraints(
     connection: &SqliteConnection,
     schema_name: Option<&str>,
-) -> Result<Vec<ForeignKeyConstraint>, Box<Error>> {
+) -> Result<Vec<ForeignKeyConstraint>, Box<dyn Error>> {
     let tables = load_table_names(connection, schema_name)?;
     let rows = tables
         .into_iter()
@@ -81,8 +81,10 @@ pub fn load_foreign_key_constraints(
                         foreign_key: row.foreign_key,
                         primary_key: row.primary_key,
                     }
-                }).collect())
-        }).collect::<QueryResult<Vec<Vec<_>>>>()?;
+                })
+                .collect())
+        })
+        .collect::<QueryResult<Vec<Vec<_>>>>()?;
     Ok(rows.into_iter().flat_map(|x| x).collect())
 }
 
@@ -148,14 +150,14 @@ impl Queryable<pragma_foreign_key_list::SqlType, Sqlite> for ForeignKeyListRow {
 
 pub fn get_primary_keys(conn: &SqliteConnection, table: &TableName) -> QueryResult<Vec<String>> {
     let query = format!("PRAGMA TABLE_INFO('{}')", &table.name);
-    let results = try!(sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn));
+    let results = sql::<pragma_table_info::SqlType>(&query).load::<FullTableInfo>(conn)?;
     Ok(results
         .into_iter()
         .filter_map(|i| if i.primary_key { Some(i.name) } else { None })
         .collect())
 }
 
-pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<Error>> {
+pub fn determine_column_type(attr: &ColumnInformation) -> Result<ColumnType, Box<dyn Error>> {
     let type_name = attr.type_name.to_lowercase();
     let path = if is_bool(&type_name) {
         String::from("Bool")

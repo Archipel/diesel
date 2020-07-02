@@ -19,6 +19,7 @@ pub struct SqliteRow {
 }
 
 impl SqliteValue {
+    #[allow(clippy::new_ret_no_self)]
     pub(crate) unsafe fn new<'a>(inner: *mut ffi::sqlite3_value) -> Option<&'a Self> {
         (inner as *const _ as *const Self).as_ref().and_then(|v| {
             if v.is_null() {
@@ -34,6 +35,8 @@ impl SqliteValue {
             let ptr = ffi::sqlite3_value_text(self.value());
             let len = ffi::sqlite3_value_bytes(self.value());
             let bytes = slice::from_raw_parts(ptr as *const u8, len as usize);
+            // The string is guaranteed to be utf8 according to
+            // https://www.sqlite.org/c3ref/value_blob.html
             str::from_utf8_unchecked(bytes)
         }
     }

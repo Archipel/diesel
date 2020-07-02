@@ -53,8 +53,8 @@ macro_rules! tuple_impls {
             {
                 const FIELDS_NEEDED: usize = $($T::FIELDS_NEEDED +)+ 0;
 
-                fn build_from_row<RowT: Row<__DB>>(row: &mut RowT) -> Result<Self, Box<Error+Send+Sync>> {
-                    Ok(($(try!($T::build_from_row(row)),)+))
+                fn build_from_row<RowT: Row<__DB>>(row: &mut RowT) -> Result<Self, Box<dyn Error + Send + Sync>> {
+                    Ok(($($T::build_from_row(row)?,)+))
                 }
             }
 

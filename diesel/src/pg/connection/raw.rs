@@ -1,4 +1,4 @@
-#![cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
+#![allow(clippy::too_many_arguments)]
 
 extern crate pq_sys;
 
@@ -19,7 +19,7 @@ impl RawConnection {
     pub fn establish(database_url: &str) -> ConnectionResult<Self> {
         use self::ConnStatusType::*;
 
-        let connection_string = try!(CString::new(database_url));
+        let connection_string = CString::new(database_url)?;
         let connection_ptr = unsafe { PQconnectdb(connection_string.as_ptr()) };
         let connection_status = unsafe { PQstatus(connection_ptr) };
 
@@ -32,6 +32,14 @@ impl RawConnection {
             }
             _ => {
                 let message = last_error_message(connection_ptr);
+
+                if !connection_ptr.is_null() {
+                    // Note that even if the server connection attempt fails (as indicated by PQstatus),
+                    // the application should call PQfinish to free the memory used by the PGconn object.
+                    // https://www.postgresql.org/docs/current/libpq-connect.html
+                    unsafe { PQfinish(connection_ptr) }
+                }
+
                 Err(ConnectionError::BadConnection(message))
             }
         }
@@ -106,7 +114,7 @@ fn last_error_message(conn: *const PGconn) -> String {
     unsafe {
         let error_ptr = PQerrorMessage(conn);
         let bytes = CStr::from_ptr(error_ptr).to_bytes();
-        str::from_utf8_unchecked(bytes).to_string()
+        String::from_utf8_lossy(bytes).to_string()
     }
 }
 
@@ -122,6 +130,7 @@ unsafe impl Send for RawResult {}
 unsafe impl Sync for RawResult {}
 
 impl RawResult {
+    #[allow(clippy::new_ret_no_self)]
     fn new(ptr: *mut PGresult, conn: &RawConnection) -> QueryResult<Self> {
         NonNull::new(ptr).map(RawResult).ok_or_else(|| {
             Error::DatabaseError(

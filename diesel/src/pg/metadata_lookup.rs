@@ -3,11 +3,13 @@ use prelude::*;
 
 /// Determines the OID of types at runtime
 #[allow(missing_debug_implementations)]
+#[repr(transparent)]
 pub struct PgMetadataLookup {
     conn: PgConnection,
 }
 
 impl PgMetadataLookup {
+    #[allow(clippy::new_ret_no_self)]
     pub(crate) fn new(conn: &PgConnection) -> &Self {
         unsafe { &*(conn as *const PgConnection as *const PgMetadataLookup) }
     }
